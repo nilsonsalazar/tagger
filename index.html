@@ -2,52 +2,147 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Generador de Etiquetas FlashStock</title>
-  <!-- Librería para generación directa de PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
-    * { box-sizing: border-box; font-family: 'Arial Black', 'Impact', sans-serif; }
-    body { margin: 0; background-color: #1e1e1e; color: #fff; display: flex; height: 100vh; font-family: Arial, sans-serif; }
+    * { box-sizing: border-box; font-family: 'Arial Black', 'Impact', sans-serif; -webkit-tap-highlight-color: transparent; }
     
-    /* Panel lateral de edición */
-    .sidebar { width: 380px; background: #252526; padding: 20px; border-right: 1px solid #3c3c3c; display: flex; flex-direction: column; }
-    .sidebar h2 { font-size: 1.1rem; margin-top: 0; color: #f59e0b; text-transform: uppercase; font-family: Arial, sans-serif; }
+    body { 
+      margin: 0; 
+      background-color: #121212; 
+      color: #fff; 
+      display: flex; 
+      flex-direction: column;
+      height: 100vh; 
+      height: 100dvh;
+      overflow: hidden;
+      font-family: Arial, sans-serif; 
+    }
+
+    /* Barra Superior Tipo App Mobile */
+    .app-header {
+      background: #1e1e1e;
+      padding: 10px 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #333;
+      z-index: 10;
+    }
+    .app-header h1 {
+      font-size: 1rem;
+      margin: 0;
+      color: #f59e0b;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Selector de Vista Mobile (Editor vs Vista Previa) */
+    .view-toggle {
+      display: flex;
+      background: #2a2a2a;
+      border-radius: 20px;
+      padding: 2px;
+    }
+    .toggle-btn {
+      border: none;
+      background: transparent;
+      color: #aaa;
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      border-radius: 15px;
+      cursor: pointer;
+    }
+    .toggle-btn.active {
+      background: #d90429;
+      color: #fff;
+    }
+
+    /* Layout Principal */
+    .app-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Sidebar / Form Panel */
+    .sidebar { 
+      width: 100%; 
+      height: 100%;
+      background: #1e1e1e; 
+      padding: 15px; 
+      display: flex; 
+      flex-direction: column; 
+      overflow-y: auto;
+      z-index: 5;
+    }
     
-    .tabs-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 15px; }
+    .tabs-grid { 
+      display: grid; 
+      grid-template-columns: repeat(4, 1fr); 
+      gap: 6px; 
+      margin-bottom: 12px; 
+    }
     .tab-btn { 
-      background: #333; color: #ccc; border: 1px solid #444; padding: 8px 4px; 
-      font-size: 0.75rem; cursor: pointer; border-radius: 3px; font-weight: bold; text-align: center;
+      background: #2d2d2d; color: #ccc; border: 1px solid #444; padding: 10px 4px; 
+      font-size: 0.8rem; cursor: pointer; border-radius: 6px; font-weight: bold; text-align: center;
     }
     .tab-btn.active { background: #d90429; color: #fff; border-color: #d90429; }
     
-    .form-container { flex: 1; overflow-y: auto; padding-right: 5px; }
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 0.8rem; margin-bottom: 4px; color: #aaa; }
+    .form-container { flex: 1; }
+    .form-group { margin-bottom: 10px; }
+    .form-group label { display: block; font-size: 0.75rem; margin-bottom: 4px; color: #aaa; }
     .form-group input, .form-group textarea { 
-      width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #444; 
-      background: #1e1e1e; color: #fff; font-size: 0.85rem; font-family: Arial, sans-serif;
+      width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #444; 
+      background: #121212; color: #fff; font-size: 0.9rem; font-family: Arial, sans-serif;
     }
     .form-group input:focus, .form-group textarea:focus { border-color: #f59e0b; outline: none; }
 
-    .actions { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
-    .btn-secondary { background: #444; color: #fff; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
-    .btn-secondary:hover { background: #555; }
-    
-    .btn-pdf { 
-      padding: 12px; background: #d90429; color: #fff; font-weight: bold; 
-      border: none; border-radius: 4px; cursor: pointer; font-size: 0.95rem; text-transform: uppercase;
+    /* Botones de Acción Estilo App Mobile */
+    .actions { 
+      margin-top: 15px; 
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
     }
-    .btn-pdf:hover { background: #b00320; }
-
-    .btn-print { 
-      padding: 10px; background: #f59e0b; color: #000; font-weight: bold; 
-      border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; text-transform: uppercase;
+    .btn {
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.8rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
     }
-    .btn-print:hover { background: #d97706; }
+    .btn-full { grid-column: span 2; }
+    .btn-secondary { background: #333; color: #fff; }
+    .btn-pdf { background: #d90429; color: #fff; }
+    .btn-print { background: #f59e0b; color: #000; }
 
-    /* Vista Previa Hoja A4 Maximizada */
-    .preview-area { flex: 1; padding: 10px; overflow: auto; display: flex; justify-content: center; background: #121212; }
-    
+    /* Área Vista Previa con Auto-Escalado */
+    .preview-area { 
+      flex: 1; 
+      padding: 10px; 
+      overflow: auto; 
+      display: flex; 
+      justify-content: center; 
+      align-items: flex-start;
+      background: #0d0d0d; 
+    }
+
+    /* Escalado Contenido A4 */
+    .sheet-wrapper {
+      transform-origin: top center;
+      transition: transform 0.2s ease;
+    }
+
     .sheet { 
       width: 210mm; 
       height: 297mm; 
@@ -58,32 +153,25 @@
       grid-template-columns: repeat(2, 1fr); 
       grid-template-rows: repeat(4, 1fr);
       grid-gap: 3mm; 
-      box-shadow: 0 0 15px rgba(0,0,0,0.6); 
+      box-shadow: 0 0 20px rgba(0,0,0,0.8); 
     }
 
-    /* ETIQUETA - MÁXIMO APROVECHAMIENTO */
+    /* Etiquetas Estilo Original */
     .tag { 
       border: 3.5px dashed #d90429; 
-      width: 100%;
-      height: 100%; 
+      width: 100%; height: 100%; 
       position: relative; 
-      display: flex; 
-      flex-direction: column; 
-      background: #fff; 
-      overflow: hidden;
-      border-radius: 10px; 
-      cursor: pointer;
+      display: flex; flex-direction: column; 
+      background: #fff; overflow: hidden;
+      border-radius: 10px; cursor: pointer;
     }
     .tag.selected { outline: 4px solid #f59e0b; outline-offset: -2px; }
 
-    /* Cabecera Roja */
     .tag-header { 
       background-color: #d90429; color: #ffffff; text-align: center; 
       padding: 6px 0; font-size: 2.1rem; font-weight: 900; letter-spacing: -0.5px;
       line-height: 1;
     }
-
-    /* Centro: Título y Descripción */
     .tag-body { 
       flex: 1; display: flex; flex-direction: column; justify-content: center; 
       align-items: center; text-align: center; padding: 4px 10px; color: #000;
@@ -95,13 +183,10 @@
       font-size: 1rem; font-weight: 800; line-height: 1.15; color: #000; text-transform: lowercase; white-space: pre-line;
     }
 
-    /* Pie: Precio Viejo + Nuevo + Melhor Preço */
     .tag-footer { 
       height: 28mm; background-color: #d90429; display: flex; 
       position: relative; border-top: 2px solid #d90429;
     }
-
-    /* Bloque Amarillo Izquierda */
     .yellow-block { 
       background-color: #ffc800; width: 36%; display: flex; flex-direction: column; 
       justify-content: center; align-items: center; padding: 2px;
@@ -110,118 +195,116 @@
     .yellow-block span { 
       color: #000; font-size: 1.05rem; font-weight: 900; line-height: 0.95; text-align: center; text-transform: uppercase;
     }
-
-    /* Área Roja Derecha */
     .price-area { 
       width: 64%; display: flex; flex-direction: column; 
       justify-content: space-between; align-items: flex-end; padding: 4px 8px 4px 0;
     }
-
-    /* Bloque Negro Precio Anterior */
     .old-price-box { 
       background-color: #000; color: #fff; padding: 2px 10px; 
       border-radius: 6px; font-size: 0.95rem; font-weight: 900; 
       text-decoration: line-through; text-decoration-color: #d90429;
     }
-
-    /* CONTENEDOR DE PRECIO ADAPTABLE */
     .price-container {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
+      width: 100%; height: 100%; display: flex;
+      align-items: center; justify-content: flex-end;
       container-type: inline-size;
     }
-
-    /* Precio Nuevo Auto-escalable */
     .new-price { 
-      color: #ffffff; 
-      font-weight: 900; 
-      line-height: 0.9; 
-      letter-spacing: -1px;
-      white-space: nowrap;
-      text-align: right;
+      color: #ffffff; font-weight: 900; line-height: 0.9; letter-spacing: -1px;
+      white-space: nowrap; text-align: right;
       font-size: clamp(2rem, 28cqw, 4.5rem);
     }
-
     .tag-num { position: absolute; top: 2px; right: 5px; font-size: 0.6rem; color: #fff; opacity: 0.6; font-family: Arial; }
 
-    /* Impresión limpia sin elementos innecesarios */
+    /* Media Queries Desktop vs Mobile */
+    @media (min-width: 850px) {
+      .app-header { display: none; }
+      .app-body { flex-direction: row; }
+      .sidebar { width: 380px; height: 100%; border-right: 1px solid #3c3c3c; }
+      .preview-area { display: flex !important; }
+      .sheet-wrapper { transform: scale(0.65) !important; }
+    }
+
+    @media (max-width: 849px) {
+      .view-editor .preview-area { display: none; }
+      .view-preview .sidebar { display: none; }
+      .view-preview .preview-area { display: flex; }
+    }
+
+    /* Ajustes Impresión */
     @media print {
-      * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-        color-adjust: exact !important;
-      }
-      @page {
-        size: A4 portrait;
-        margin: 0;
-      }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      @page { size: A4 portrait; margin: 0; }
       body { background: #fff; }
-      .sidebar { display: none !important; }
-      .preview-area { padding: 0; background: #fff; display: block; }
-      .sheet { 
-        box-shadow: none; 
-        width: 210mm; 
-        height: 297mm; 
-        padding: 2mm; 
-        grid-gap: 2mm;
-      }
+      .app-header, .sidebar { display: none !important; }
+      .preview-area { padding: 0; background: #fff; display: block !important; }
+      .sheet-wrapper { transform: none !important; }
+      .sheet { box-shadow: none; width: 210mm; height: 297mm; padding: 2mm; grid-gap: 2mm; }
       .tag { border: 3px dashed #d90429 !important; }
       .tag.selected { outline: none !important; }
       .tag-num { display: none !important; }
     }
   </style>
 </head>
-<body>
+<body class="view-editor">
 
-  <!-- PANEL DE CONTROL -->
-  <div class="sidebar">
-    <h2>Editar Etiquetas (1 al 8)</h2>
-    
-    <div class="tabs-grid" id="tabsContainer"></div>
-
-    <div class="form-container">
-      <div class="form-group">
-        <label id="lblTitle">Título del Producto:</label>
-        <input type="text" id="inTitle" oninput="updateCurrentTag()">
-      </div>
-
-      <div class="form-group">
-        <label>Descripción del Producto:</label>
-        <textarea id="inSpecs" rows="3" oninput="updateCurrentTag()"></textarea>
-      </div>
-
-      <div class="form-group">
-        <label>Precio Anterior (Negro):</label>
-        <input type="text" id="inOldPrice" placeholder="ej. 888,99 €" oninput="updateCurrentTag()">
-      </div>
-
-      <div class="form-group">
-        <label>Precio Nuevo (Grande Blanco):</label>
-        <input type="text" id="inPrice" placeholder="ej. 888,99 €" oninput="updateCurrentTag()">
-      </div>
+  <!-- Header Superior para Mobile -->
+  <header class="app-header">
+    <h1>FlashStock Tag Tagger</h1>
+    <div class="view-toggle">
+      <button class="toggle-btn active" id="btnViewEditor" onclick="setView('editor')">✏️ Editar</button>
+      <button class="toggle-btn" id="btnViewPreview" onclick="setView('preview')">👁️ Previa</button>
     </div>
+  </header>
 
-    <div class="actions">
-      <button class="btn-secondary" onclick="copyTag1ToAll()">Copiar Etiq. 1 a todas</button>
-      <button class="btn-secondary" onclick="saveProject()">💾 Guardar Edición (Proyecto)</button>
-      <button class="btn-secondary" onclick="document.getElementById('fileInput').click()">📂 Cargar Proyecto Guardado</button>
-      <input type="file" id="fileInput" style="display:none" accept=".json" onchange="loadProject(event)">
-      
-      <button class="btn-pdf" onclick="downloadPDF()">📄 Descargar PDF de Imprenta</button>
-      <button class="btn-print" onclick="window.print()">🖨️ Imprimir Directo</button>
-    </div>
-  </div>
+  <div class="app-body">
+    <!-- PANEL EDICIÓN / CONTROLES -->
+    <aside class="sidebar">
+      <div class="tabs-grid" id="tabsContainer"></div>
 
-  <!-- VISTA PREVIA HOJA A4 -->
-  <div class="preview-area">
-    <div class="sheet" id="sheetContainer"></div>
+      <div class="form-container">
+        <div class="form-group">
+          <label id="lblTitle">Título del Producto:</label>
+          <input type="text" id="inTitle" oninput="updateCurrentTag()">
+        </div>
+
+        <div class="form-group">
+          <label>Descripción del Producto:</label>
+          <textarea id="inSpecs" rows="3" oninput="updateCurrentTag()"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Precio Anterior (Negro):</label>
+          <input type="text" id="inOldPrice" placeholder="ej. 888,99 €" oninput="updateCurrentTag()">
+        </div>
+
+        <div class="form-group">
+          <label>Precio Nuevo (Grande Blanco):</label>
+          <input type="text" id="inPrice" placeholder="ej. 888,99 €" oninput="updateCurrentTag()">
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-secondary btn-full" onclick="copyTag1ToAll()">📋 Copiar Etiq. 1 a todas</button>
+        <button class="btn btn-secondary" onclick="saveProject()">💾 Guardar JSON</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">📂 Cargar JSON</button>
+        <input type="file" id="fileInput" style="display:none" accept=".json" onchange="loadProject(event)">
+        
+        <button class="btn btn-pdf btn-full" onclick="downloadPDF()">📄 Descargar PDF Imprenta</button>
+        <button class="btn btn-print btn-full" onclick="window.print()">🖨️ Imprimir Directo</button>
+      </div>
+    </aside>
+
+    <!-- ÁREA DE VISTA PREVIA (A4 RESPONSIVO) -->
+    <main class="preview-area" id="previewArea">
+      <div class="sheet-wrapper" id="sheetWrapper">
+        <div class="sheet" id="sheetContainer"></div>
+      </div>
+    </main>
   </div>
 
   <script>
-    const tagsData = Array.from({ length: 8 }, (_, i) => ({
+    const tagsData = Array.from({ length: 8 }, () => ({
       title: "titulo producto",
       specs: "descripcion producto",
       oldPrice: "888,99 €",
@@ -234,6 +317,46 @@
       renderTabs();
       renderSheet();
       loadFormValues(0);
+      autoScaleSheet();
+      window.addEventListener('resize', autoScaleSheet);
+    }
+
+    /* Cambiar entre vistas en móviles */
+    function setView(view) {
+      if (view === 'editor') {
+        document.body.classList.remove('view-preview');
+        document.body.classList.add('view-editor');
+        document.getElementById('btnViewEditor').classList.add('active');
+        document.getElementById('btnViewPreview').classList.remove('active');
+      } else {
+        document.body.classList.remove('view-editor');
+        document.body.classList.add('view-preview');
+        document.getElementById('btnViewPreview').classList.add('active');
+        document.getElementById('btnViewEditor').classList.remove('active');
+        setTimeout(autoScaleSheet, 50);
+      }
+    }
+
+    /* Escalado Dinámico de la Hoja A4 según la pantalla */
+    function autoScaleSheet() {
+      const previewArea = document.getElementById('previewArea');
+      const wrapper = document.getElementById('sheetWrapper');
+      if (!previewArea || !wrapper) return;
+
+      const areaWidth = previewArea.clientWidth - 20;
+      const sheetWidthPx = 210 * 3.7795275591; // 210mm a Px aprox
+      
+      let scale = areaWidth / sheetWidthPx;
+      
+      // Limitar escala
+      if (window.innerWidth >= 850) {
+        scale = 0.65;
+      } else if (scale > 0.9) {
+        scale = 0.9;
+      }
+
+      wrapper.style.transform = `scale(${scale})`;
+      wrapper.style.marginBottom = `-${(297 * 3.7795275591) * (1 - scale)}px`;
     }
 
     function renderTabs() {
@@ -342,14 +465,10 @@
       }
     }
 
-    /* GENERACIÓN DE PDF NOMBRADO AUTOMÁTICAMENTE */
     function downloadPDF() {
       const element = document.getElementById('sheetContainer');
-      
-      // Quitar selección visual temporalmente
       document.querySelectorAll('.tag').forEach(el => el.classList.remove('selected'));
 
-      // Formatear nombre: Etiquetas_AAAA-MM-DD_NombreProducto.pdf
       const today = new Date().toISOString().split('T')[0];
       const rawTitle = tagsData[0].title || 'Producto';
       const cleanTitle = rawTitle.replace(/[^a-zA-Z0-9_\-]/g, '_').substring(0, 25);
@@ -364,11 +483,10 @@
       };
 
       html2pdf().set(opt).from(element).save().then(() => {
-        selectTag(currentIdx); // Restaurar selección
+        selectTag(currentIdx);
       });
     }
 
-    /* GUARDAR PROYECTO JSON PARA EDITAR LUEGO */
     function saveProject() {
       const today = new Date().toISOString().split('T')[0];
       const rawTitle = tagsData[0].title || 'Producto';
@@ -382,7 +500,6 @@
       a.click();
     }
 
-    /* CARGAR PROYECTO JSON GUARDADO */
     function loadProject(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -392,17 +509,14 @@
         try {
           const loadedData = JSON.parse(e.target.result);
           if (Array.isArray(loadedData) && loadedData.length === 8) {
-            loadedData.forEach((item, i) => {
-              tagsData[i] = item;
-            });
+            loadedData.forEach((item, i) => { tagsData[i] = item; });
             selectTag(0);
             renderSheet();
-            alert('¡Proyecto cargado con éxito! Ya puedes corregir las etiquetas.');
           } else {
-            alert('El archivo no tiene el formato correcto.');
+            alert('El archivo JSON no tiene las 8 etiquetas requeridas.');
           }
         } catch (err) {
-          alert('Error al leer el archivo de proyecto.');
+          alert('Error al leer el archivo JSON.');
         }
       };
       reader.readAsText(file);
